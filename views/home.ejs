@@ -1,14 +1,34 @@
-<%- include("partials/header"); -%>
-<h1>Home</h1>
-<p><%= homeContent %></p>
+<%- include('partials/header'); -%>
 
-<% posts.forEach(function(post){ %>
-<div class="item">
-  <h1><%= post.title %></h1>
-  <p><%= post.content.substring(0,100) + " ..."%>
-    <a href="/posts/<%= post._id %>">Read More</a>
-  </p>
-</div>
-<% }); %>
+<main class="container">
+  <header class="hero">
+    <h1 class="hero-title">Verses & Vibez</h1>
+    <p class="hero-subtitle">A sanctuary for modern poetry</p>
+    <a href="/about" class="btn-primary">More About Us</a>
+  </header>
 
-<%- include("partials/footer"); -%>
+  <section class="intro">
+    <p class="lead"><%= homeContent %></p>
+  </section>
+
+  <section class="poetry-collection">
+    <h2 class="section-title">Latest Poems</h2>
+    <% if (posts.length > 0) { %>
+      <div class="poem-grid">
+        <% posts.forEach(function(post) { %>
+          <article class="poem-card">
+            <h3 class="poem-title"><%= post.title %></h3>
+            <p class="poem-excerpt">
+              "<%= post.content.substring(0, 100) %>..."
+            </p>
+            <a href="/posts/<%= post._id %>" class="read-more">Read Full Poem</a>
+          </article>
+        <% }); %>
+      </div>
+    <% } else { %>
+      <p class="no-poems">No poems have been penned yet. Check back soon for lyrical wonders.</p>
+    <% } %>
+  </section>
+</main>
+
+<%- include('partials/footer'); -%>

@@ -1,4 +1,13 @@
-<%- include("partials/header"); -%>
-<h1>About</h1>
-<p><%= aboutContent %></p>
-<%- include("partials/footer"); -%>
+<%- include('partials/header'); -%>
+
+<main class="container">
+  <header class="hero">
+    <h1 class="page-title">About Us</h1>
+  </header>
+
+  <section class="content">
+    <p class="lead"><%= aboutContent %></p>
+  </section>
+</main>
+
+<%- include('partials/footer'); -%>

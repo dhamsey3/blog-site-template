@@ -1,84 +1,138 @@
-//jshint esversion:6
-
+// Import required modules
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
+const multer = require("multer");
+const path = require("path");
 
-const homeStartingContent = "Lacus vel facilisis volutpat est velit egestas dui id ornare. Semper auctor neque vitae tempus quam. Sit amet cursus sit amet dictum sit amet justo. Viverra tellus in hac habitasse. Imperdiet proin fermentum leo vel orci porta. Donec ultrices tincidunt arcu non sodales neque sodales ut. Mattis molestie a iaculis at erat pellentesque adipiscing. Magnis dis parturient montes nascetur ridiculus mus mauris vitae ultricies. Adipiscing elit ut aliquam purus sit amet luctus venenatis lectus. Ultrices vitae auctor eu augue ut lectus arcu bibendum at. Odio euismod lacinia at quis risus sed vulputate odio ut. Cursus mattis molestie a iaculis at erat pellentesque adipiscing.";
-const aboutContent = "Hac habitasse platea dictumst vestibulum rhoncus est pellentesque. Dictumst vestibulum rhoncus est pellentesque elit ullamcorper. Non diam phasellus vestibulum lorem sed. Platea dictumst quisque sagittis purus sit. Egestas sed sed risus pretium quam vulputate dignissim suspendisse. Mauris in aliquam sem fringilla. Semper risus in hendrerit gravida rutrum quisque non tellus orci. Amet massa vitae tortor condimentum lacinia quis vel eros. Enim ut tellus elementum sagittis vitae. Mauris ultrices eros in cursus turpis massa tincidunt dui.";
-const contactContent = "Scelerisque eleifend donec pretium vulputate sapien. Rhoncus urna neque viverra justo nec ultrices. Arcu dui vivamus arcu felis bibendum. Consectetur adipiscing elit duis tristique. Risus viverra adipiscing at in tellus integer feugiat. Sapien nec sagittis aliquam malesuada bibendum arcu vitae. Consequat interdum varius sit amet mattis. Iaculis nunc sed augue lacus. Interdum posuere lorem ipsum dolor sit amet consectetur adipiscing elit. Pulvinar elementum integer enim neque. Ultrices gravida dictum fusce ut placerat orci nulla. Mauris in aliquam sem fringilla ut morbi tincidunt. Tortor posuere ac ut consequat semper viverra nam libero.";
+// Initial content for home, about, and contact pages
+const homeStartingContent = "Welcome to VersesVibez, a haven for poetry enthusiasts. Here, words flow freely and emotions are woven into every verse. Explore the beauty of language and the power of expression through our collection of poems. Whether you're a poet looking to share your work or a reader seeking inspiration, VersesVibez is your sanctuary. Dive into the world of poetry and let your soul be moved by the artistry of words.";
+const aboutContent = "VersesVibez was born from a love of poetry and a desire to create a space where poets and poetry lovers can connect. Our mission is to celebrate the art of poetry by providing a platform for sharing, reading, and appreciating poems from around the world. At VersesVibez, we believe in the transformative power of poetry to heal, inspire, and bring people together. Join us in our journey to explore the depths of human emotion and creativity through the timeless art of poetry.";
+const contactContent = "We'd love to hear from you! Whether you have a question, a suggestion, or just want to share your love for poetry, feel free to reach out. You can email us at versesvibes@gmail.com or connect with us on social media. Let's keep the conversation about poetry alive and vibrant. Your feedback and contributions are what make VersesVibez a thriving community. Thank you for being a part of our poetic journey.";
 
+// Initialize Express app
 const app = express();
 
+// Set view engine to EJS for templating
 app.set('view engine', 'ejs');
-app.use(bodyParser.urlencoded({extended: true}));
+
+// Use body-parser to handle URL encoded data
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Serve static files from the "public" directory
 app.use(express.static("public"));
 
-mongoose.connect("mongodb://localhost:27017/blogDB", {useNewUrlParser: true, useUnifiedTopology: true});
+// Connect to MongoDB using Mongoose
+mongoose.connect("mongodb://localhost:27017/blogDB", { useNewUrlParser: true, useUnifiedTopology: true });
 
-const postSchema = mongoose.Schema({
-  title: {
-    type: String
+// Define the schema for blog posts
+const postSchema = new mongoose.Schema({
+  title: String,
+  content: String,
+  imagePath: String
+});
+
+// Create a Mongoose model for blog posts
+const Post = mongoose.model("Post", postSchema);
+
+// Define the schema for contact messages
+const contactSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  message: String,
+  date: { type: Date, default: Date.now }
+});
+
+// Create a Mongoose model for contact messages
+const Contact = mongoose.model("Contact", contactSchema);
+
+// Configure Multer for file uploads
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, "public/uploads");
   },
-  content: {
-    type: String
+  filename: function(req, file, cb) {
+    cb(null, file.fieldname + "-" + Date.now() + path.extname(file.originalname));
   }
 });
 
-const Post = mongoose.model("Post", postSchema);
+const upload = multer({ storage: storage });
 
-//Renders home.ejs at localhost:3000
+// Route for home page
 app.get("/", function(req, res) {
-  //sends const homeStartingContent over to home.ejs using homeContent
-  Post.find({}, function(err, posts){
-    res.render("home", {homeContent: homeStartingContent, posts: posts});
+  Post.find({}, function(err, posts) {
+    res.render("home", { homeContent: homeStartingContent, posts: posts });
   });
 });
 
-//Retrieves data from the compose boxes
-app.post("/compose", function(req, res){
-const postTitle = req.body.postTitle;
-const postContent = req.body.postBody;
-
-const newPost = new Post({
-  title: postTitle,
-  content: postContent
+// Route for compose page
+app.get("/compose", function(req, res) {
+  res.render("compose");
 });
 
-  newPost.save(function(err){
-    if(!err){
+// Handle form submission from compose page
+app.post("/compose", upload.single("postImage"), function(req, res) {
+  const postTitle = req.body.postTitle;
+  const postContent = req.body.postBody;
+  const postImage = req.file ? "/uploads/" + req.file.filename : null;
+
+  const newPost = new Post({
+    title: postTitle,
+    content: postContent,
+    imagePath: postImage
+  });
+
+  newPost.save(function(err) {
+    if (!err) {
       res.redirect("/");
     }
   });
 });
 
-//Renders about.ejs at localhost:3000
+// Route for about page
 app.get("/about", function(req, res) {
-  //sends const aboutContent over to about.ejs using aboutContent
-  res.render("about", {aboutContent: aboutContent});
+  res.render("about", { aboutContent: aboutContent });
 });
 
-//Renders contact.ejs at localhost:3000/contact
+// Route for contact page
 app.get("/contact", function(req, res) {
-  //sends const contactContent over to contact.ejs using contactContent
-  res.render("contact", {contactContent: contactContent});
+  res.render("contact", { contactContent: contactContent });
 });
 
-//Renders compose.ejs at localhost:3000/compose
-app.get("/compose", function(req, res) {
-  res.render("compose");
-});
+// Handle contact form submission
+app.post("/submit-contact", function(req, res) {
+  const newContact = new Contact({
+    name: req.body.name,
+    email: req.body.email,
+    message: req.body.message
+  });
 
-//dynamically makes urls for each posts: "express routing"
-app.get("/posts/:postId", function(req,res){
-  //sets the url title to lowercase
-  const reqPostId = req.params.postId;
-  Post.findOne({_id: reqPostId}, function(err,post){
-    res.render("post", {postTitle: post.title, postContent: post.content});
+  newContact.save(function(err) {
+    if (!err) {
+      res.render("contact", { 
+        contactContent: contactContent,
+        successMessage: "Thank you for your message. We'll get back to you soon!"
+      });
+    } else {
+      res.render("contact", { 
+        contactContent: contactContent,
+        errorMessage: "There was an error submitting your message. Please try again."
+      });
+    }
   });
 });
 
+// Route for individual post pages
+app.get("/posts/:postId", function(req, res) {
+  const reqPostId = req.params.postId;
+
+  Post.findOne({ _id: reqPostId }, function(err, post) {
+    res.render("post", { postTitle: post.title, postContent: post.content, postImage: post.imagePath });
+  });
+});
+
+// Start the server on port 3000
 app.listen(3000, function() {
   console.log("Server started on port 3000");
 });
